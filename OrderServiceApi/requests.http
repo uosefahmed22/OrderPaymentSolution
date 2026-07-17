@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:9092 
 
-@orderId = 2886d241-1a44-4d7a-bb57-c1623045ad9f
+@orderId = befcdb65-da11-42a4-b679-c9068720f168
 ###
 GET {{baseUrl}}/api/orders/{{orderId}}
 

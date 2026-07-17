@@ -1,8 +1,8 @@
 services:
   orderserviceapi:
     build:
-     context: .
-     dockerfile: OrderServiceApi/Dockerfile
+      context: .
+      dockerfile: OrderServiceApi/Dockerfile
     ports:
       - 9092:80
     environment:
@@ -12,7 +12,7 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://ops.seq:5341/ingest/otlp/v1/traces
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
     volumes:
-      - sqlite_data_orderservice:/app/data 
+      - sqlite_data_orderservice:/app/data
     depends_on:
       - paymentserviceapi
     networks:
@@ -20,17 +20,17 @@ services:
 
   paymentserviceapi:
     build:
-     context: .
-     dockerfile: PaymentServiceApi/Dockerfile
+      context: .
+      dockerfile: PaymentServiceApi/Dockerfile
     ports:
       - 9093:80
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80 
+      - ASPNETCORE_URLS=http://+:80
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://ops.seq:5341/ingest/otlp/v1/traces
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
     volumes:
-      - sqlite_data_paymentservice:/app/data 
+      - sqlite_data_paymentservice:/app/data
     networks:
       - ops
 
@@ -47,6 +47,26 @@ services:
     ports:
       - 5341:5341
       - 8081:80
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./containers/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - ops
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=YourStrongPwd
+    ports:
+      - "3000:3000"
+    networks:
+      - ops
       
 networks:
   ops:

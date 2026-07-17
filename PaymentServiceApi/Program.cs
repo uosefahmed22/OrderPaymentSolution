@@ -1,5 +1,6 @@
 using M01.RepositoryPattern.Data;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using PaymentServiceApi.Exceptions;
@@ -25,6 +26,13 @@ builder.Services.AddOpenTelemetry()
         tracing.AddAspNetCoreInstrumentation();
         tracing.AddHttpClientInstrumentation();
         tracing.AddOtlpExporter();
+    })
+     .WithMetrics(metrics =>
+    {
+        metrics.AddAspNetCoreInstrumentation();
+        metrics.AddHttpClientInstrumentation();
+        metrics.AddOtlpExporter();
+        metrics.AddPrometheusExporter();
     });
 
 builder.Services.AddControllers().AddJsonOptions(options =>
