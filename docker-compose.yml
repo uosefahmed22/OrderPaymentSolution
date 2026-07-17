@@ -1,0 +1,57 @@
+services:
+  orderserviceapi:
+    build:
+     context: .
+     dockerfile: OrderServiceApi/Dockerfile
+    ports:
+      - 9092:80
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - PaymentService__BaseUrl=http://paymentserviceapi:80
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://ops.seq:5341/ingest/otlp/v1/traces
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+    volumes:
+      - sqlite_data_orderservice:/app/data 
+    depends_on:
+      - paymentserviceapi
+    networks:
+      - ops
+
+  paymentserviceapi:
+    build:
+     context: .
+     dockerfile: PaymentServiceApi/Dockerfile
+    ports:
+      - 9093:80
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80 
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://ops.seq:5341/ingest/otlp/v1/traces
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+    volumes:
+      - sqlite_data_paymentservice:/app/data 
+    networks:
+      - ops
+
+  ops.seq:
+    image: datalust/seq:latest
+    container_name: Ops.Seq
+    volumes:
+      - ./containers/seq:/data
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=YourStrongPassword123!
+    networks:
+      - ops
+    ports:
+      - 5341:5341
+      - 8081:80
+      
+networks:
+  ops:
+    driver: bridge
+  
+volumes:
+  sqlite_data_orderservice: {}
+  sqlite_data_paymentservice: {}
