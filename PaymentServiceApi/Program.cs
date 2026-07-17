@@ -1,14 +1,17 @@
 using M01.RepositoryPattern.Data;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using PaymentServiceApi.Exceptions;
+using PaymentServiceApi.HealthChecks;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+builder.Services.AddHealthChecks();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddProblemDetails(options =>
@@ -44,10 +47,29 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlite("Data Source = app.db");
-});
+}).AddHealthChecks().AddCheck<DbHealthCheck>("database");
 
 
 var app = builder.Build();
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (ctx, report) =>
+    {
+        ctx.Response.ContentType = "application/json";
+        var payload = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description
+            })
+        };
+        await ctx.Response.WriteAsJsonAsync(payload);
+    }
+}); app.UseExceptionHandler();
 
 app.UseExceptionHandler();
 

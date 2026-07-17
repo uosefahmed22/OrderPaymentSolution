@@ -1,11 +1,13 @@
 using M01.OrderPaymentSystem.OrderServiceApi.Repositories;
 using M01.OrderPaymentSystem.OrderServiceApi.Services;
 using M01.RepositoryPattern.Data;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OrderServiceApi.Exceptions;
+using OrderServiceApi.HealthChecks;
 using Serilog;
 using System.Text.Json.Serialization;
 
@@ -59,7 +61,7 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlite("Data Source = app.db");
-});
+}).AddHealthChecks().AddCheck<DbHealthCheck>("database");
 
 builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
 {
@@ -68,8 +70,25 @@ builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
 
 var app = builder.Build();
 
-app.MapHealthChecks("/health");
-app.UseExceptionHandler();
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (ctx, report) =>
+    {
+        ctx.Response.ContentType = "application/json";
+        var payload = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description
+            })
+        };
+        await ctx.Response.WriteAsJsonAsync(payload);
+    }
+}); app.UseExceptionHandler();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.UseStatusCodePages();
