@@ -1,9 +1,10 @@
 @baseUrl = http://localhost:9092 
 
-@orderId = befcdb65-da11-42a4-b679-c9068720f168
+@orderId = 72ac3691-9899-4f21-be0a-4de7eb7da594
 ###
 GET {{baseUrl}}/api/orders/{{orderId}}
 
+GET {{baseUrl}}/health
 ### 
 POST {{baseUrl}}/api/orders
 Content-Type: application/json
@@ -32,7 +33,7 @@ content-Type: application/json
 {
   "paymentMethod": "CreditCard",
   "cardNumber": "****1234",
-  "cardHolderName": "John Doe"
+  "cardHolderName": "Ahmed Mohamed"
 }
 
 ###

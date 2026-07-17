@@ -13,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+builder.Services.AddHealthChecks();
+
 builder.Host.UseSerilog((context, loggerconfiguration) =>
 {
     loggerconfiguration.ReadFrom.Configuration(context.Configuration);
@@ -66,6 +68,7 @@ builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
 
 var app = builder.Build();
 
+app.MapHealthChecks("/health");
 app.UseExceptionHandler();
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
